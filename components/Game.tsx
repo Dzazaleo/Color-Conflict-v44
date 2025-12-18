@@ -250,7 +250,7 @@ const Game: React.FC<GameProps> = ({
   const addFloatingText = (x: number, y: number, text: string, color: string) => {
       if (!floatingTextContainerRef.current) return;
 
-      const laneCount = (practiceConfig?.mode === 'FOUR_LANES') ? 4 : (levelRef.current % 3 === 0) ? 4 : 3;
+      const laneCount = (practiceConfig?.mode === 'FOUR_LANES') ? 4 : (levelRef.current > 0 && levelRef.current % 3 === 0) ? 4 : 3;
       
       const el = document.createElement('div');
       el.textContent = text;
@@ -509,7 +509,12 @@ const Game: React.FC<GameProps> = ({
        if (poolSlot) {
             let nextDist = Math.random() * (MAX_OBSTACLE_DISTANCE - MIN_OBSTACLE_DISTANCE) + MIN_OBSTACLE_DISTANCE;
             let transitionHeight = 0;
-            const activeLanes = (practiceConfig?.mode === 'FOUR_LANES') ? 4 : (levelRef.current % 3 === 0) ? 4 : 3;
+            
+            // STRICT LANE LOGIC FIX: Ensure we only trigger 4 lanes if strictly level > 0 and divisible by 3
+            const isFourLaneMode = practiceConfig?.mode === 'FOUR_LANES';
+            const isLevelFourLane = levelRef.current > 0 && levelRef.current % 3 === 0;
+            const activeLanes = isFourLaneMode ? 4 : isLevelFourLane ? 4 : 3;
+            
             const setSize = OBSTACLES_PER_SET;
 
             if (practiceConfig?.mode === 'SINGLE_CRATE' && !hasSpawnedTutorialCrateRef.current) {
@@ -855,6 +860,7 @@ const Game: React.FC<GameProps> = ({
                         zIndex={renderObstacles.length - i} 
                     />
                 ))}
+                {/* Ref-based Floating Texts Container */}
                 <div ref={floatingTextContainerRef} className="absolute inset-0 pointer-events-none z-50" />
           </div>
       </div>
