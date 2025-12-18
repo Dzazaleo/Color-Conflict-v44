@@ -250,7 +250,10 @@ const Game: React.FC<GameProps> = ({
   const addFloatingText = (x: number, y: number, text: string, color: string) => {
       if (!floatingTextContainerRef.current) return;
 
-      const laneCount = (practiceConfig?.mode === 'FOUR_LANES') ? 4 : (levelRef.current > 0 && levelRef.current % 3 === 0) ? 4 : 3;
+      const isFourLaneMode = practiceConfig?.mode === 'FOUR_LANES';
+      // Strictly harden floating text logic to match spawn logic
+      const isLevelFourLane = levelRef.current >= 3 && levelRef.current % 3 === 0;
+      const laneCount = isFourLaneMode ? 4 : isLevelFourLane ? 4 : 3;
       
       const el = document.createElement('div');
       el.textContent = text;
@@ -510,9 +513,10 @@ const Game: React.FC<GameProps> = ({
             let nextDist = Math.random() * (MAX_OBSTACLE_DISTANCE - MIN_OBSTACLE_DISTANCE) + MIN_OBSTACLE_DISTANCE;
             let transitionHeight = 0;
             
-            // STRICT LANE LOGIC FIX: Ensure we only trigger 4 lanes if strictly level > 0 and divisible by 3
+            // STRICT FIX: Ensure 4 lanes only happen on Level 3, 6, 9, etc.
+            // Explicitly check that level >= 3 to prevent Level 0 or 1 initialization bugs.
             const isFourLaneMode = practiceConfig?.mode === 'FOUR_LANES';
-            const isLevelFourLane = levelRef.current > 0 && levelRef.current % 3 === 0;
+            const isLevelFourLane = levelRef.current >= 3 && levelRef.current % 3 === 0;
             const activeLanes = isFourLaneMode ? 4 : isLevelFourLane ? 4 : 3;
             
             const setSize = OBSTACLES_PER_SET;
