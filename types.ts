@@ -55,12 +55,13 @@ export interface ObstacleItem {
   isCorrect: boolean;
   effect?: PowerUpType; // For crates
   isHit?: boolean;      // For collision animation
+  isEmpty: boolean;     // For Object Pooling (replaces null)
 }
 
 export interface ObstacleRow {
   id: number;
   y: number; // Percentage down the screen (0-100)
-  items: (ObstacleItem | null)[]; // Array of items (length 3 or 4)
+  items: ObstacleItem[]; // Fixed array of items (length 4 max)
   passed: boolean;
   rule: Rule;      // The rule associated with this specific obstacle
   setIndex: number; // 1 to totalInSet

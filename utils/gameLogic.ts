@@ -46,12 +46,32 @@ export const generateRule = (exclude?: Rule, forcedType?: RuleType): Rule => {
   return newRule;
 };
 
-// Generate a single Stroop item (circle with text)
-const generateItem = (
+// --- OBJECT POOLING HELPERS ---
+
+export const createEmptyItem = (): ObstacleItem => ({
+    displayColor: ColorType.BLACK, 
+    wordText: ColorType.BLACK,
+    isCorrect: false,
+    isEmpty: true,
+    isHit: false
+});
+
+export const initializeRowItems = (count: number): ObstacleItem[] => {
+    return Array.from({ length: count }, () => createEmptyItem());
+};
+
+// Hydrate a single item (mutates target)
+const hydrateItem = (
+  target: ObstacleItem,
   mustBeCorrect: boolean,
   rule: Rule,
   seed?: number
-): ObstacleItem => {
+) => {
+  target.isEmpty = false;
+  target.isHit = false;
+  target.isCorrect = mustBeCorrect;
+  target.effect = undefined;
+
   let displayColor: ColorType;
   let wordText: ColorType;
 
@@ -81,28 +101,112 @@ const generateItem = (
     }
   }
 
-  const item: ObstacleItem = { displayColor, wordText, isCorrect: mustBeCorrect };
+  target.displayColor = displayColor;
+  target.wordText = wordText;
   
-  // Pre-calculate glitch text if seed is provided
   if (seed !== undefined) {
-      item.glitchText = getGlitchText(wordText, seed);
+      target.glitchText = getGlitchText(wordText, seed);
+  } else {
+      target.glitchText = undefined;
   }
-
-  return item;
 };
 
-export const regenerateRowItems = (
+export const hydrateRowItems = (
+    targetItems: ObstacleItem[],
     rule: Rule,
     laneCount: number,
     rowId?: number
-): ObstacleItem[] => {
+): void => {
     const correctLane = Math.floor(Math.random() * laneCount);
-    const items: ObstacleItem[] = [];
-    for (let i = 0; i < laneCount; i++) {
+    
+    for (let i = 0; i < targetItems.length; i++) {
+        // Clear slots beyond active lanes
+        if (i >= laneCount) {
+            targetItems[i].isEmpty = true;
+            targetItems[i].isHit = false;
+            targetItems[i].effect = undefined;
+            targetItems[i].glitchText = undefined;
+            continue;
+        }
+
         const seed = rowId !== undefined ? rowId + (i * 10) : undefined;
-        items.push(generateItem(i === correctLane, rule, seed));
+        hydrateItem(targetItems[i], i === correctLane, rule, seed);
     }
-    return items;
+};
+
+export const hydrateCrateItems = (
+    targetItems: ObstacleItem[],
+    rule: Rule,
+    laneCount: number,
+    disabledPowerUps: PowerUpType[]
+): void => {
+    const emptyLane = Math.floor(Math.random() * laneCount);
+    
+    let allEffects = [
+        PowerUpType.SPEED, 
+        PowerUpType.DRUNK, 
+        PowerUpType.FOG, 
+        PowerUpType.DYSLEXIA, 
+        PowerUpType.GPS, 
+        PowerUpType.BLOCKER,
+        PowerUpType.WILD,
+        PowerUpType.WARP
+    ];
+
+    if (rule.type === RuleType.MATCH_WORD) {
+        allEffects.push(PowerUpType.GLITCH);
+    }
+
+    if (rule.type === RuleType.MATCH_COLOR) {
+        allEffects.push(PowerUpType.BLEACH);
+        allEffects.push(PowerUpType.ALIAS);
+    }
+
+    if (disabledPowerUps.length > 0) {
+        allEffects = allEffects.filter(eff => !disabledPowerUps.includes(eff));
+    }
+
+    let effectsToUse: PowerUpType[] = [];
+    if (allEffects.length > 0) {
+        // Fisher-Yates shuffle
+        for (let i = allEffects.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allEffects[i], allEffects[j]] = [allEffects[j], allEffects[i]];
+        }
+        const slotsToFill = Math.max(0, laneCount - 1);
+        effectsToUse = allEffects.slice(0, Math.min(slotsToFill, allEffects.length));
+    }
+
+    let effectIdx = 0;
+
+    for (let i = 0; i < targetItems.length; i++) {
+        // Cleanup old state
+        targetItems[i].isHit = false;
+        targetItems[i].glitchText = undefined;
+        targetItems[i].displayColor = ColorType.GRAY; // Reset visual defaults
+        targetItems[i].wordText = ColorType.GRAY;
+
+        if (i >= laneCount) {
+            targetItems[i].isEmpty = true;
+            targetItems[i].effect = undefined;
+            continue;
+        }
+
+        if (i === emptyLane) {
+            targetItems[i].isEmpty = true;
+            targetItems[i].effect = undefined;
+        } else {
+            if (effectIdx < effectsToUse.length) {
+                targetItems[i].isEmpty = false;
+                targetItems[i].isCorrect = true;
+                targetItems[i].effect = effectsToUse[effectIdx];
+                effectIdx++;
+            } else {
+                targetItems[i].isEmpty = true;
+                targetItems[i].effect = undefined;
+            }
+        }
+    }
 };
 
 export const resetObstacleRow = (
@@ -119,11 +223,13 @@ export const resetObstacleRow = (
     target.setIndex = setIndex;
     target.transitionZoneHeight = transitionZoneHeight;
     target.totalInSet = totalInSet;
-    target.items = regenerateRowItems(rule, laneCount, id);
     target.passed = false;
     target.y = -20;
     target.type = ObstacleType.STANDARD;
     target.active = true;
+    
+    // Deep hydration
+    hydrateRowItems(target.items, rule, laneCount, id);
 };
 
 export const resetCrateRow = (
@@ -133,60 +239,8 @@ export const resetCrateRow = (
     laneCount: number = 3,
     disabledPowerUps: PowerUpType[] = []
 ): void => {
-    const emptyLane = Math.floor(Math.random() * laneCount);
-    
-    let allEffects = [
-        PowerUpType.SPEED, 
-        PowerUpType.DRUNK, 
-        PowerUpType.FOG, 
-        PowerUpType.DYSLEXIA, 
-        PowerUpType.GPS, 
-        PowerUpType.BLOCKER,
-        PowerUpType.WILD,
-        PowerUpType.WARP
-    ];
-
-    if (rule.type === RuleType.MATCH_WORD) {
-        allEffects.push(PowerUpType.GLITCH);
-    }
-
-    if (rule.type === RuleType.MATCH_COLOR) {
-        allEffects.push(PowerUpType.BLEACH);
-        allEffects.push(PowerUpType.ALIAS);
-    }
-
-    if (disabledPowerUps.length > 0) {
-        allEffects = allEffects.filter(eff => !disabledPowerUps.includes(eff));
-    }
-
-    const items: (ObstacleItem | null)[] = Array(laneCount).fill(null);
-
-    if (allEffects.length > 0) {
-        for (let i = allEffects.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [allEffects[i], allEffects[j]] = [allEffects[j], allEffects[i]];
-        }
-
-        const slotsToFill = Math.max(0, laneCount - 1);
-        const effectsToUse = allEffects.slice(0, Math.min(slotsToFill, allEffects.length));
-        let effectIdx = 0;
-
-        for (let i = 0; i < laneCount; i++) {
-            if (i !== emptyLane && effectIdx < effectsToUse.length) {
-                items[i] = {
-                    displayColor: ColorType.GRAY,
-                    wordText: ColorType.GRAY,
-                    isCorrect: true,
-                    effect: effectsToUse[effectIdx]
-                };
-                effectIdx++;
-            }
-        }
-    }
-
     target.id = id;
     target.rule = rule;
-    target.items = items;
     target.passed = false;
     target.y = -20;
     target.setIndex = 0;
@@ -194,8 +248,12 @@ export const resetCrateRow = (
     target.transitionZoneHeight = 0;
     target.type = ObstacleType.CRATE;
     target.active = true;
+
+    // Deep hydration
+    hydrateCrateItems(target.items, rule, laneCount, disabledPowerUps);
 };
 
+// Deprecated factory functions (updated to use pool logic pattern if still used, though likely replaced by pool init)
 export const generateObstacleRow = (
   id: number, 
   rule: Rule, 
@@ -204,12 +262,13 @@ export const generateObstacleRow = (
   totalInSet: number = 5,
   laneCount: number = 3
 ): ObstacleRow => {
-  const items: (ObstacleItem | null)[] = regenerateRowItems(rule, laneCount, id);
+  const items = initializeRowItems(4); // Max 4
+  hydrateRowItems(items, rule, laneCount, id);
 
   return {
     id,
     y: -20, 
-    items: items,
+    items,
     passed: false,
     rule,
     setIndex,
@@ -226,74 +285,8 @@ export const generateCrateRow = (
     laneCount: number = 3,
     disabledPowerUps: PowerUpType[] = []
 ): ObstacleRow => {
-    const emptyLane = Math.floor(Math.random() * laneCount);
-    
-    let allEffects = [
-        PowerUpType.SPEED, 
-        PowerUpType.DRUNK, 
-        PowerUpType.FOG, 
-        PowerUpType.DYSLEXIA, 
-        PowerUpType.GPS, 
-        PowerUpType.BLOCKER,
-        PowerUpType.WILD,
-        PowerUpType.WARP
-    ];
-
-    if (rule.type === RuleType.MATCH_WORD) {
-        allEffects.push(PowerUpType.GLITCH);
-    }
-
-    if (rule.type === RuleType.MATCH_COLOR) {
-        allEffects.push(PowerUpType.BLEACH);
-        allEffects.push(PowerUpType.ALIAS);
-    }
-
-    if (disabledPowerUps.length > 0) {
-        allEffects = allEffects.filter(eff => !disabledPowerUps.includes(eff));
-    }
-
-    if (allEffects.length === 0) {
-         return {
-            id,
-            y: -20,
-            items: Array(laneCount).fill(null),
-            passed: false,
-            rule,
-            setIndex: 0,
-            totalInSet: 0,
-            transitionZoneHeight: 0,
-            type: ObstacleType.CRATE,
-            active: true
-        };
-    }
-
-    for (let i = allEffects.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allEffects[i], allEffects[j]] = [allEffects[j], allEffects[i]];
-    }
-
-    const slotsToFill = Math.max(0, laneCount - 1);
-    const effectsToUse = allEffects.slice(0, Math.min(slotsToFill, allEffects.length));
-    const items: (ObstacleItem | null)[] = Array(laneCount).fill(null);
-    let effectIdx = 0;
-
-    for (let i = 0; i < laneCount; i++) {
-        if (i === emptyLane) {
-            items[i] = null;
-        } else {
-            if (effectIdx < effectsToUse.length) {
-                items[i] = {
-                    displayColor: ColorType.GRAY,
-                    wordText: ColorType.GRAY,
-                    isCorrect: true,
-                    effect: effectsToUse[effectIdx]
-                };
-                effectIdx++;
-            } else {
-                items[i] = null;
-            }
-        }
-    }
+    const items = initializeRowItems(4);
+    hydrateCrateItems(items, rule, laneCount, disabledPowerUps);
 
     return {
         id,
