@@ -240,8 +240,6 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
     shouldHighlightGuided = true,
     zIndex = 10 
 }, ref) => {
-  // console.log('Rendering Obstacle', obstacle.id); // Validating render frequency
-  
   if (!obstacle.active) {
     return (
         <div 
@@ -366,15 +364,12 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
   );
 });
 
-const Obstacle = memo(ObstacleComponent, (prev, next) => {
-    // 1. Identity & Active State
+export default React.memo(ObstacleComponent, (prev, next) => {
     if (prev.obstacle.id !== next.obstacle.id) return false;
     if (prev.obstacle.active !== next.obstacle.active) return false;
     
-    // 2. Items Content Check
-    if (prev.obstacle.items !== next.obstacle.items) return false;
-    
     // Deep check items if id is same (for hit detection updates which happen in-place)
+    if (prev.obstacle.items !== next.obstacle.items) return false;
     for(let i=0; i<prev.obstacle.items.length; i++) {
         const pItem = prev.obstacle.items[i];
         const nItem = next.obstacle.items[i];
@@ -384,17 +379,14 @@ const Obstacle = memo(ObstacleComponent, (prev, next) => {
         }
     }
 
-    // 3. Global Settings
     if (prev.visualFX !== next.visualFX) return false;
     if (prev.activeEffect !== next.activeEffect) return false;
-    
-    // 4. Warp & Guidance Props
     if (prev.isWarpGhost !== next.isWarpGhost) return false;
     if (prev.showWarpGuidance !== next.showWarpGuidance) return false;
     if (prev.shouldHighlightGuided !== next.shouldHighlightGuided) return false;
     if (prev.zIndex !== next.zIndex) return false;
 
-    // 5. Wild Effects Array Comparison
+    // Wild Effects Array Comparison
     const prevWild = prev.wildEffects || [];
     const nextWild = next.wildEffects || [];
     if (prevWild.length !== nextWild.length) return false;
@@ -404,5 +396,3 @@ const Obstacle = memo(ObstacleComponent, (prev, next) => {
 
     return true;
 });
-
-export default Obstacle;

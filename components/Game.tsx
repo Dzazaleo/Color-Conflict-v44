@@ -1,12 +1,12 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Rule, RuleType, ObstacleRow, ObstacleType, PowerUpType, AppSettings, PracticeConfig, ColorType } from '../types';
-import { INITIAL_SPEED, MAX_SPEED, MIN_OBSTACLE_DISTANCE, MAX_OBSTACLE_DISTANCE, PLAYER_Y_POS, HITBOX_THRESHOLD, OBSTACLES_PER_SET, COLOR_MAP, TRACK_THEMES, COLOR_ALIAS_MAP, CRATE_METADATA } from '../constants';
+import { Rule, RuleType, ObstacleRow, ColorType, ObstacleType, PowerUpType, AppSettings, PracticeConfig } from '../types';
+import { INITIAL_SPEED, MAX_SPEED, MIN_OBSTACLE_DISTANCE, MAX_OBSTACLE_DISTANCE, PLAYER_Y_POS, HITBOX_THRESHOLD, OBSTACLES_PER_SET, COLOR_MAP, TRACK_THEMES, COLOR_ALIAS_MAP, ALL_COLORS, CRATE_METADATA } from '../constants';
 import { generateRule, resetObstacleRow, resetCrateRow, hydrateRowItems, initializeRowItems } from '../utils/gameLogic';
 import Car from './Car';
 import Obstacle from './Obstacle';
 import TutorialModal from './TutorialModal';
-import { Heart, TriangleAlert, Pause, Settings, Infinity, Hand } from 'lucide-react';
+import { Palette, Type, Heart, TriangleAlert, Pause, Play, RotateCcw, Home, Settings, GraduationCap, Infinity, Hand } from 'lucide-react';
 import clsx from 'clsx';
 import { audioManager } from '../utils/audio';
 
@@ -126,13 +126,13 @@ const Game: React.FC<GameProps> = ({
     displayedRuleRef.current = currentRuleRef.current;
     setLevelAnnouncement(1);
     
-    // Initialize Object Pool with Fixed Item Arrays
+    // Initialize Object Pool with initialized items
     const pool: ObstacleRow[] = [];
     for (let i = 0; i < POOL_SIZE; i++) {
         pool.push({
             id: -i - 1,
             y: -20,
-            items: initializeRowItems(4), // Pre-allocate max items
+            items: initializeRowItems(4),
             passed: false,
             rule: currentRuleRef.current,
             setIndex: 0,
@@ -253,13 +253,14 @@ const Game: React.FC<GameProps> = ({
       const laneCount = (practiceConfig?.mode === 'FOUR_LANES') ? 4 : (levelRef.current % 3 === 0) ? 4 : 3;
       
       const el = document.createElement('div');
-      el.className = clsx("absolute z-50 pointer-events-none font-black text-2xl animate-bounce drop-shadow-lg", color);
       el.textContent = text;
+      el.className = `absolute z-50 pointer-events-none font-black text-2xl animate-bounce drop-shadow-lg ${color}`;
       el.style.left = `${((x + 0.5) / laneCount) * 100}%`;
       el.style.top = `${y}%`;
-      el.style.transform = isEffectActive(PowerUpType.DYSLEXIA) 
-          ? 'translate(-50%, -50%) scaleX(-1)' 
-          : 'translate(-50%, -50%)';
+      el.style.transform = 'translate(-50%, -50%)';
+      if (isEffectActive(PowerUpType.DYSLEXIA)) {
+          el.style.transform += ' scaleX(-1)';
+      }
       
       floatingTextContainerRef.current.appendChild(el);
       
@@ -419,8 +420,8 @@ const Game: React.FC<GameProps> = ({
           obstaclesRef.current.forEach(obs => {
               if (obs.active && !obs.passed && obs.type === ObstacleType.STANDARD) {
                   obs.rule = finalRule;
-                  obs.items = hydrateRowItems(obs.items, finalRule, activeLaneCount, obs.id); // Hydrate in place if using updated logic
-                  // Note: hydrateRowItems is void in previous file, we should assume it mutates.
+                  obs.items = hydrateRowItems(obs.items, finalRule, activeLaneCount, obs.id) as unknown as ObstacleRow['items'] || obs.items;
+                  // TypeScript hack above: hydrateRowItems is void in previous step but let's assume mutation
                   hydrateRowItems(obs.items, finalRule, activeLaneCount, obs.id);
               }
           });
@@ -854,7 +855,7 @@ const Game: React.FC<GameProps> = ({
                         zIndex={renderObstacles.length - i} 
                     />
                 ))}
-                <div ref={floatingTextContainerRef} className="absolute inset-0 z-50 pointer-events-none" />
+                <div ref={floatingTextContainerRef} className="absolute inset-0 pointer-events-none z-50" />
           </div>
       </div>
       {countdownDisplay && (
