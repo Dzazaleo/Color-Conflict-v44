@@ -314,7 +314,7 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
       )}
 
       {obstacle.items.map((item, index) => {
-        if (item.isEmpty) { // CHANGED: Uses property instead of null check
+        if (item.isEmpty) { 
              return <div key={index} className="flex-1" />;
         }
 
@@ -372,38 +372,15 @@ const Obstacle = memo(ObstacleComponent, (prev, next) => {
     if (prev.obstacle.active !== next.obstacle.active) return false;
     
     // 2. Items Content Check
-    // With Deep Pooling, reference equality of 'items' array might remain same if parent mutates it.
-    // However, usually we mutate the *contents* of items. 
-    // Since Game.tsx passes the SAME row object reference from the pool, `prev.obstacle` and `next.obstacle` are usually the same object reference if we don't copy it.
-    // BUT we trigger state updates with setRenderObstacles([...pool]).
-    // The shallow copy means `prev.obstacle` === `next.obstacle` is true if we didn't clone the row.
-    // If they are the same reference, memo might not re-render even if we mutated active.
-    // Wait, in Game.tsx we do `setRenderObstacles([...obstaclesRef.current])`.
-    // The row object IS the same.
-    // So we need to check properties.
+    if (prev.obstacle.items !== next.obstacle.items) return false;
     
-    // Actually, React Memo compares props.
-    // If `prev.obstacle` (ref A) === `next.obstacle` (ref A), standard memo returns true (no render).
-    // This is DANGEROUS with mutation unless we rely on `active` or `id` changing to trigger render.
-    // `resetObstacleRow` updates ID. So `id` check should be sufficient for spawn/respawn.
-    
-    // However, what if we update `isHit`? We don't change ID.
-    // We need to check internal state changes if ID matches.
-    
-    // Since we are iterating items, let's just do a simple check on active items props.
-    if (prev.obstacle.items !== next.obstacle.items) {
-        // If arrays are different refs (shouldn't happen with strict pooling but safe to check)
-        return false;
-    }
-    
-    // Deep check items if id is same (for hit detection updates)
+    // Deep check items if id is same (for hit detection updates which happen in-place)
     for(let i=0; i<prev.obstacle.items.length; i++) {
         const pItem = prev.obstacle.items[i];
         const nItem = next.obstacle.items[i];
         if (pItem.isEmpty !== nItem.isEmpty) return false;
         if (!pItem.isEmpty && !nItem.isEmpty) {
             if (pItem.isHit !== nItem.isHit) return false;
-            // Other props shouldn't change mid-life without ID change, except maybe effect?
         }
     }
 
