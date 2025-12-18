@@ -250,15 +250,13 @@ const Game: React.FC<GameProps> = ({
   const addFloatingText = (x: number, y: number, text: string, color: string) => {
       if (!floatingTextContainerRef.current) return;
 
-      const isFourLaneMode = practiceConfig?.mode === 'FOUR_LANES';
-      // Strictly harden floating text logic to match spawn logic
-      const isLevelFourLane = levelRef.current >= 3 && levelRef.current % 3 === 0;
-      const laneCount = isFourLaneMode ? 4 : isLevelFourLane ? 4 : 3;
+      // DEFINITIVE FIX: Use state source-of-truth
+      const currentLaneCount = activeLaneCount;
       
       const el = document.createElement('div');
       el.textContent = text;
       el.className = `absolute z-50 pointer-events-none font-black text-2xl animate-bounce drop-shadow-lg ${color}`;
-      el.style.left = `${((x + 0.5) / laneCount) * 100}%`;
+      el.style.left = `${((x + 0.5) / currentLaneCount) * 100}%`;
       el.style.top = `${y}%`;
       el.style.transform = 'translate(-50%, -50%)';
       if (isEffectActive(PowerUpType.DYSLEXIA)) {
@@ -513,11 +511,8 @@ const Game: React.FC<GameProps> = ({
             let nextDist = Math.random() * (MAX_OBSTACLE_DISTANCE - MIN_OBSTACLE_DISTANCE) + MIN_OBSTACLE_DISTANCE;
             let transitionHeight = 0;
             
-            // STRICT FIX: Ensure 4 lanes only happen on Level 3, 6, 9, etc.
-            // Explicitly check that level >= 3 to prevent Level 0 or 1 initialization bugs.
-            const isFourLaneMode = practiceConfig?.mode === 'FOUR_LANES';
-            const isLevelFourLane = levelRef.current >= 3 && levelRef.current % 3 === 0;
-            const activeLanes = isFourLaneMode ? 4 : isLevelFourLane ? 4 : 3;
+            // DEFINITIVE FIX: Use the component state directly to ensure logic matches visuals.
+            const activeLanes = activeLaneCount;
             
             const setSize = OBSTACLES_PER_SET;
 
@@ -732,7 +727,7 @@ const Game: React.FC<GameProps> = ({
         setRenderObstacles([...obstaclesRef.current]);
     }
     requestRef.current = requestAnimationFrame(animate);
-  }, [onGameOver, onScoreUpdate, activeEffect, wildEffects, ruleTotal, handleSetCompletion, isMenuPaused, isSettingsOpen, isEffectActive, displayRule.type, displayRule.targetColor, settings.haptics, settings.crateToggles, practiceConfig, activeTutorial]);
+  }, [onGameOver, onScoreUpdate, activeEffect, wildEffects, ruleTotal, handleSetCompletion, isMenuPaused, isSettingsOpen, isEffectActive, displayRule.type, displayRule.targetColor, settings.haptics, settings.crateToggles, practiceConfig, activeTutorial, activeLaneCount]);
 
   const playerLaneRef = useRef(playerLane);
   useEffect(() => { playerLaneRef.current = playerLane; }, [playerLane]);
