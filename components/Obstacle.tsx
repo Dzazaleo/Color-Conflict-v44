@@ -280,25 +280,6 @@ const ObstacleBase = forwardRef<HTMLDivElement, ObstacleProps>(({
         zIndex: zIndex 
       }}
     >
-        <style>{`
-            @keyframes explode {
-                0% { transform: scale(1); opacity: 1; filter: brightness(1); }
-                30% { transform: scale(1.1); opacity: 0.8; filter: brightness(2); }
-                100% { transform: scale(1.8); opacity: 0; filter: brightness(3) blur(6px); }
-            }
-            @keyframes rainbow-pulse {
-                0% { filter: hue-rotate(0deg) brightness(1.2); }
-                100% { filter: hue-rotate(360deg) brightness(1.2); }
-            }
-            @keyframes warp-pulse {
-                0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(192,38,233,0.3); }
-                50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(192,38,233,0.6); }
-            }
-            @keyframes guidance-pulse {
-                0%, 100% { transform: scale(1.05); opacity: 0.8; box-shadow: 0 0 15px rgba(250,204,21,0.5); }
-                50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 35px rgba(250,204,21,0.9); }
-            }
-        `}</style>
       
       {(obstacle.transitionZoneHeight || 0) > 0 && (
          <div 

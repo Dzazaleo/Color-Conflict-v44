@@ -420,8 +420,6 @@ const Game: React.FC<GameProps> = ({
           obstaclesRef.current.forEach(obs => {
               if (obs.active && !obs.passed && obs.type === ObstacleType.STANDARD) {
                   obs.rule = finalRule;
-                  obs.items = hydrateRowItems(obs.items, finalRule, activeLaneCount, obs.id) as unknown as ObstacleRow['items'] || obs.items;
-                  // TypeScript hack above: hydrateRowItems is void in previous step but let's assume mutation
                   hydrateRowItems(obs.items, finalRule, activeLaneCount, obs.id);
               }
           });
@@ -804,23 +802,6 @@ const Game: React.FC<GameProps> = ({
 
   return (
     <div className={clsx("relative w-full h-full overflow-hidden transition-all duration-700 ease-in-out", activeTheme.bg, activeTheme.ambient)}>
-      <style>{`
-          @keyframes rain { from { background-position: 0 0; } to { background-position: 0 300px; } }
-          @keyframes drunk-sway {
-            0%, 100% { transform: scale(1.05) rotate(0deg) skewX(0deg); }
-            20% { transform: scale(1.05) rotate(2deg) skewX(1deg); }
-            40% { transform: scale(1.05) rotate(-1deg) skewX(-2deg); }
-            60% { transform: scale(1.05) rotate(-2deg) skewX(1deg); }
-            80% { transform: scale(1.05) rotate(1deg) skewX(-1deg); }
-          }
-          @keyframes dot-ripple { 0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(34,211,238,0.8); } 100% { transform: scale(3); opacity: 0; box-shadow: 0 0 0 6px rgba(34,211,238,0); } }
-          @keyframes dot-ripple-orange { 0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(249,115,22,0.8); } 100% { transform: scale(3); opacity: 0; box-shadow: 0 0 0 6px rgba(249,115,22,0); } }
-          @keyframes rewind-scan { 0% { background-position: 0 0; opacity: 0.1; } 50% { opacity: 0.2; } 100% { background-position: 0 -50px; opacity: 0.1; } }
-          @keyframes gps-scroll { from { background-position: center 80px; } to { background-position: center 0px; } }
-          @keyframes powerup-pop { 0% { transform: scale(0.8); filter: brightness(1); } 40% { transform: scale(1.15); filter: brightness(2); } 100% { transform: scale(0.8); filter: brightness(1); } }
-          @keyframes shockwave-ring { 0% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; border-width: 4px; } 100% { transform: translate(-50%, -50%) scale(2.0); opacity: 0; border-width: 0px; } }
-          @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-      `}</style>
       <div className={clsx("absolute inset-0 w-full h-full transition-transform duration-300", isEffectActive(PowerUpType.DYSLEXIA) && "scale-x-[-1]")}>
           {lightningFlash && settings.visualFX && <div className="absolute inset-0 z-50 pointer-events-none bg-white/90 animate-pulse"></div>}
           <div className={clsx("absolute inset-0 w-full h-full transition-all duration-700 ease-in-out", settings.visualFX && isEffectActive(PowerUpType.DRUNK) && "animate-pulse blur-[1px] hue-rotate-15")} style={{ maskImage: settings.visualFX && isEffectActive(PowerUpType.FOG) ? 'linear-gradient(to top, black 40%, transparent 95%)' : 'none', animation: settings.visualFX && isEffectActive(PowerUpType.DRUNK) ? 'drunk-sway 6s ease-in-out infinite' : 'none' }}>

@@ -1,4 +1,3 @@
-
 import { ColorType, RuleType, Rule, ObstacleItem, ObstacleRow, ObstacleType, PowerUpType } from '../types';
 import { ALL_COLORS } from '../constants';
 
@@ -252,52 +251,3 @@ export const resetCrateRow = (
     // Deep hydration
     hydrateCrateItems(target.items, rule, laneCount, disabledPowerUps);
 };
-
-// Deprecated factory functions (updated to use pool logic pattern if still used, though likely replaced by pool init)
-export const generateObstacleRow = (
-  id: number, 
-  rule: Rule, 
-  setIndex: number,
-  transitionZoneHeight: number = 0,
-  totalInSet: number = 5,
-  laneCount: number = 3
-): ObstacleRow => {
-  const items = initializeRowItems(4); // Max 4
-  hydrateRowItems(items, rule, laneCount, id);
-
-  return {
-    id,
-    y: -20, 
-    items,
-    passed: false,
-    rule,
-    setIndex,
-    totalInSet,
-    transitionZoneHeight,
-    type: ObstacleType.STANDARD,
-    active: true
-  };
-};
-
-export const generateCrateRow = (
-    id: number,
-    rule: Rule,
-    laneCount: number = 3,
-    disabledPowerUps: PowerUpType[] = []
-): ObstacleRow => {
-    const items = initializeRowItems(4);
-    hydrateCrateItems(items, rule, laneCount, disabledPowerUps);
-
-    return {
-        id,
-        y: -20,
-        items,
-        passed: false,
-        rule,
-        setIndex: 0,
-        totalInSet: 0,
-        transitionZoneHeight: 0,
-        type: ObstacleType.CRATE,
-        active: true
-    };
-}
