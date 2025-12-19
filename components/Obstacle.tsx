@@ -110,7 +110,7 @@ const ObstacleItemView: React.FC<{
 
     if (item.isHit) {
         return (
-           <div className="flex justify-center items-center relative w-full h-full">
+           <div className="relative w-full h-full flex justify-center items-center">
                <div 
                    className={clsx(
                        "w-24 h-24 rounded-full flex justify-center items-center shadow-lg border-4 border-white",
@@ -143,7 +143,7 @@ const ObstacleItemView: React.FC<{
         }
 
         return (
-            <div className="flex justify-center items-center relative w-full h-full">
+            <div className="relative w-full h-full flex justify-center items-center">
                 <div className="absolute top-1/2 w-full h-1 bg-fuchsia-900/50 -z-10" />
                 <div className={clsx(
                     "w-24 h-24 rounded-full flex justify-center items-center border-4 relative transition-all duration-300",
@@ -170,7 +170,7 @@ const ObstacleItemView: React.FC<{
     const isGpsTarget = isGpsActive && item.isCorrect;
 
     return (
-        <div className="flex justify-center items-center relative w-full h-full">
+        <div className="relative w-full h-full flex justify-center items-center">
             <div className="absolute top-1/2 w-full h-1 bg-slate-700/50 -z-10" />
             <div 
                 className={clsx(
@@ -298,23 +298,22 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
       
       {(obstacle.transitionZoneHeight || 0) > 0 && (
          <div 
-           className="absolute left-0 right-0 -z-20 flex justify-center pointer-events-none"
+           className="absolute left-0 right-0 -z-20 grid pointer-events-none"
            style={{ 
                top: '100%', 
-               height: `${obstacle.transitionZoneHeight}%`
+               height: `${obstacle.transitionZoneHeight}%`,
+               gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`
            }}
          >
-            <div className="w-full h-full relative grid" style={{ gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))` }}>
-                {Array.from({ length: itemCount }).map((_, i) => (
-                     <div key={i} className="h-full" />
-                ))}
-            </div>
+            {Array.from({ length: itemCount }).map((_, i) => (
+                 <div key={i} className="w-full h-full" />
+            ))}
          </div>
       )}
 
       {obstacle.items.map((item, index) => {
         if (item.isEmpty) { 
-             return <div key={index} className="" />;
+             return <div key={index} className="relative w-full h-full" />;
         }
 
         if (obstacle.type === ObstacleType.CRATE) {
@@ -323,7 +322,7 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
 
              if (item.isHit) {
                  return (
-                    <div key={index} className="flex justify-center items-center relative w-full h-full">
+                    <div key={index} className="relative w-full h-full flex justify-center items-center">
                         <div className={clsx(
                             "w-24 h-24 rounded-xl flex items-center justify-center relative",
                             bgClass,
@@ -337,7 +336,7 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
              }
 
              return (
-                <div key={index} className="flex justify-center items-center relative w-full h-full">
+                <div key={index} className="relative w-full h-full flex justify-center items-center">
                     <CrateVisual effect={effect} visualFX={visualFX} />
                 </div>
              );
