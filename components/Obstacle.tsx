@@ -1,5 +1,5 @@
 
-import React, { useMemo, forwardRef, memo } from 'react';
+import React, { useMemo, forwardRef } from 'react';
 import { ObstacleRow, ColorType, ObstacleType, PowerUpType, ObstacleItem } from '../types';
 import { BG_COLOR_CLASS_MAP } from '../constants';
 import { getGlitchText } from '../utils/gameLogic';
@@ -237,7 +237,7 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
     visualFX = true, 
     isWarpGhost = false, 
     showWarpGuidance = false,
-    shouldHighlightGuided = true,
+    shouldHighlightGuided = true, 
     zIndex = 10 
 }, ref) => {
   if (!obstacle.active) {
@@ -315,7 +315,7 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
       )}
 
       {obstacle.items.map((item, index) => {
-        if (item.isEmpty) {
+        if (!item || item.isEmpty) {
              // Empty slot: rigid grid cell
              return <div key={index} className="relative w-full h-full" />;
         }
@@ -368,35 +368,23 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
   );
 });
 
-export default React.memo(ObstacleComponent, (prev, next) => {
-    if (prev.obstacle.id !== next.obstacle.id) return false;
-    if (prev.obstacle.active !== next.obstacle.active) return false;
-    
-    // Deep check items if id is same (for hit detection updates which happen in-place)
-    if (prev.obstacle.items !== next.obstacle.items) return false;
-    for(let i=0; i<prev.obstacle.items.length; i++) {
-        const pItem = prev.obstacle.items[i];
-        const nItem = next.obstacle.items[i];
-        if (pItem.isEmpty !== nItem.isEmpty) return false;
-        if (!pItem.isEmpty && !nItem.isEmpty) {
-            if (pItem.isHit !== nItem.isHit) return false;
-        }
-    }
-
-    if (prev.visualFX !== next.visualFX) return false;
-    if (prev.activeEffect !== next.activeEffect) return false;
-    if (prev.isWarpGhost !== next.isWarpGhost) return false;
-    if (prev.showWarpGuidance !== next.showWarpGuidance) return false;
-    if (prev.shouldHighlightGuided !== next.shouldHighlightGuided) return false;
-    if (prev.zIndex !== next.zIndex) return false;
-
-    // Wild Effects Array Comparison
-    const prevWild = prev.wildEffects || [];
-    const nextWild = next.wildEffects || [];
-    if (prevWild.length !== nextWild.length) return false;
-    for (let i = 0; i < prevWild.length; i++) {
-        if (prevWild[i] !== nextWild[i]) return false;
-    }
-
-    return true;
+// Memoize to prevent unnecessary re-renders when other game state changes,
+// but ensure we re-render if the position (y), active status, or visual props change.
+const Obstacle = React.memo(ObstacleComponent, (prev, next) => {
+    return (
+        prev.obstacle.id === next.obstacle.id &&
+        prev.obstacle.active === next.obstacle.active &&
+        prev.obstacle.isGuided === next.obstacle.isGuided &&
+        prev.activeEffect === next.activeEffect &&
+        prev.visualFX === next.visualFX &&
+        prev.isWarpGhost === next.isWarpGhost &&
+        prev.showWarpGuidance === next.showWarpGuidance &&
+        prev.shouldHighlightGuided === next.shouldHighlightGuided &&
+        // Shallow compare wild effects array
+        (prev.wildEffects === next.wildEffects || 
+         (prev.wildEffects?.length === next.wildEffects?.length && 
+          prev.wildEffects?.every((val, index) => val === next.wildEffects?.[index])))
+    );
 });
+
+export default Obstacle;
