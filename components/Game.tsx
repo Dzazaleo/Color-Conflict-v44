@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Rule, RuleType, ObstacleRow, ColorType, ObstacleType, PowerUpType, AppSettings, PracticeConfig } from '../types';
 import { INITIAL_SPEED, MAX_SPEED, MIN_OBSTACLE_DISTANCE, MAX_OBSTACLE_DISTANCE, PLAYER_Y_POS, HITBOX_THRESHOLD, OBSTACLES_PER_SET, COLOR_MAP, TRACK_THEMES, COLOR_ALIAS_MAP, ALL_COLORS, CRATE_METADATA } from '../constants';
@@ -858,6 +857,7 @@ const Game: React.FC<GameProps> = ({
                         shouldHighlightGuided={(practiceConfig?.mode === 'SINGLE_CRATE' && practiceConfig.selectedCrate === PowerUpType.WARP) ? warpStateRef.current.active : true} 
                         showWarpGuidance={practiceConfig?.mode === 'SINGLE_CRATE' && practiceConfig.selectedCrate === PowerUpType.WARP && warpSetsCompletedRef.current < 1 && warpStateRef.current.active} 
                         zIndex={renderObstacles.length - i} 
+                        laneCount={activeLaneCount}
                     />
                 ))}
                 {/* Ref-based Floating Texts Container */}

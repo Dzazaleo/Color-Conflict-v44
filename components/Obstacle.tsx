@@ -14,6 +14,7 @@ interface ObstacleProps {
   showWarpGuidance?: boolean; 
   shouldHighlightGuided?: boolean; 
   zIndex?: number;
+  laneCount?: number;
 }
 
 const CRATE_STYLE_MAP: Record<PowerUpType, { 
@@ -109,7 +110,7 @@ const ObstacleItemView: React.FC<{
 
     if (item.isHit) {
         return (
-           <div className="relative w-full h-full flex justify-center items-center">
+           <div className="w-full h-full flex justify-center items-center">
                <div 
                    className={clsx(
                        "w-24 h-24 rounded-full flex justify-center items-center shadow-lg border-4 border-white",
@@ -142,7 +143,7 @@ const ObstacleItemView: React.FC<{
         }
 
         return (
-            <div className="relative w-full h-full flex justify-center items-center">
+            <div className="w-full h-full flex justify-center items-center">
                 <div className="absolute top-1/2 w-full h-1 bg-fuchsia-900/50 -z-10" />
                 <div className={clsx(
                     "w-24 h-24 rounded-full flex justify-center items-center border-4 relative transition-all duration-300",
@@ -169,7 +170,7 @@ const ObstacleItemView: React.FC<{
     const isGpsTarget = isGpsActive && item.isCorrect;
 
     return (
-        <div className="relative w-full h-full flex justify-center items-center">
+        <div className="w-full h-full flex justify-center items-center">
             <div className="absolute top-1/2 w-full h-1 bg-slate-700/50 -z-10" />
             <div 
                 className={clsx(
@@ -229,7 +230,8 @@ const ObstacleItemView: React.FC<{
     );
 };
 
-const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({ 
+// Define the component logic separately
+const ObstacleBase = forwardRef<HTMLDivElement, ObstacleProps>(({ 
     obstacle, 
     activeEffect, 
     wildEffects = [], 
@@ -237,7 +239,8 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
     isWarpGhost = false, 
     showWarpGuidance = false,
     shouldHighlightGuided = true,
-    zIndex = 10 
+    zIndex = 10,
+    laneCount = 3 
 }, ref) => {
   if (!obstacle.active) {
     return (
@@ -249,7 +252,11 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
     );
   }
 
-  const itemCount = obstacle.items.length;
+  const itemCount = laneCount;
+  // Fallback to prevent division by zero or invalid layouts
+  if (itemCount === 0) return null;
+
+  const laneWidthPercent = 100 / itemCount;
   
   const isEffectActive = (type: PowerUpType) => {
       if (activeEffect === type) return true;
@@ -265,11 +272,8 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
   return (
     <div
       ref={ref}
-      className="absolute w-full left-0 right-0 m-0 p-0 border-none pointer-events-none will-change-transform"
+      className="absolute w-full left-0 right-0 px-0 mx-0 p-0 m-0 pointer-events-none will-change-transform"
       style={{ 
-        display: 'grid',
-        gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`,
-        gap: 0,
         top: `${obstacle.y}%`,
         transform: 'translate3d(0, -50%, 0)',
         height: '110px',
@@ -300,24 +304,36 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
          <div 
            className="absolute left-0 right-0 -z-20 pointer-events-none"
            style={{ 
-               display: 'grid',
-               gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`,
-               gap: 0,
                top: '100%', 
-               height: `${obstacle.transitionZoneHeight}%`
+               height: `${obstacle.transitionZoneHeight}%`,
+               width: '100%'
            }}
          >
-            {/* Direct children of grid container, filling cells */}
             {Array.from({ length: itemCount }).map((_, i) => (
-                 <div key={i} className="relative w-full h-full" />
+                 <div 
+                    key={i} 
+                    className="absolute top-0 bottom-0"
+                    style={{
+                        left: `${i * laneWidthPercent}%`,
+                        width: `${laneWidthPercent}%`
+                    }}
+                 />
             ))}
          </div>
       )}
 
       {obstacle.items.map((item, index) => {
+        // Only render items within the active lane count
+        if (index >= itemCount) return null;
+
+        // Absolute Positioning Logic to match Car.tsx and Background Lanes
+        const style = {
+            left: `${index * laneWidthPercent}%`,
+            width: `${laneWidthPercent}%`,
+        };
+
         if (!item || item.isEmpty) {
-             // Empty slot: rigid grid cell
-             return <div key={index} className="relative w-full h-full" />;
+             return <div key={index} className="absolute top-0 h-full" style={style} />;
         }
 
         if (obstacle.type === ObstacleType.CRATE) {
@@ -326,7 +342,7 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
 
              if (item.isHit) {
                  return (
-                    <div key={index} className="relative w-full h-full flex justify-center items-center">
+                    <div key={index} className="absolute top-0 h-full flex justify-center items-center" style={style}>
                         <div className={clsx(
                             "w-24 h-24 rounded-xl flex items-center justify-center relative",
                             bgClass,
@@ -340,28 +356,29 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
              }
 
              return (
-                <div key={index} className="relative w-full h-full flex justify-center items-center">
+                <div key={index} className="absolute top-0 h-full flex justify-center items-center" style={style}>
                     <CrateVisual effect={effect} visualFX={visualFX} />
                 </div>
              );
         }
 
         return (
-            <ObstacleItemView 
-                key={index}
-                item={item}
-                index={index}
-                obstacleId={obstacle.id}
-                isGlitchActive={isGlitchActive}
-                isBleachActive={isBleachActive}
-                isBlockerActive={isBlockerActive}
-                isGpsActive={isGpsActive}
-                isGuidedTarget={shouldHighlightGuided && obstacle.isGuided && item.isCorrect}
-                visualFX={visualFX}
-                isWarpGhost={isWarpGhost}
-                showWarpGuidance={showWarpGuidance}
-                itemCount={itemCount}
-            />
+            <div key={index} className="absolute top-0 h-full" style={style}>
+                <ObstacleItemView 
+                    item={item}
+                    index={index}
+                    obstacleId={obstacle.id}
+                    isGlitchActive={isGlitchActive}
+                    isBleachActive={isBleachActive}
+                    isBlockerActive={isBlockerActive}
+                    isGpsActive={isGpsActive}
+                    isGuidedTarget={shouldHighlightGuided && obstacle.isGuided && item.isCorrect}
+                    visualFX={visualFX}
+                    isWarpGhost={isWarpGhost}
+                    showWarpGuidance={showWarpGuidance}
+                    itemCount={itemCount}
+                />
+            </div>
         );
       })}
     </div>
@@ -370,7 +387,7 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
 
 // Memoize to prevent unnecessary re-renders when other game state changes,
 // but ensure we re-render if the position (y), active status, or visual props change.
-const Obstacle = React.memo(ObstacleComponent, (prev, next) => {
+const Obstacle = React.memo(ObstacleBase, (prev, next) => {
     return (
         prev.obstacle.id === next.obstacle.id &&
         prev.obstacle.active === next.obstacle.active &&
@@ -380,6 +397,7 @@ const Obstacle = React.memo(ObstacleComponent, (prev, next) => {
         prev.isWarpGhost === next.isWarpGhost &&
         prev.showWarpGuidance === next.showWarpGuidance &&
         prev.shouldHighlightGuided === next.shouldHighlightGuided &&
+        prev.laneCount === next.laneCount &&
         // Shallow compare wild effects array
         (prev.wildEffects === next.wildEffects || 
          (prev.wildEffects?.length === next.wildEffects?.length && 
