@@ -265,14 +265,14 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
   return (
     <div
       ref={ref}
-      className="absolute w-full px-0 pointer-events-none will-change-transform"
+      className="absolute w-full left-0 right-0 m-0 p-0 border-none pointer-events-none will-change-transform"
       style={{ 
         display: 'grid',
         gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`,
+        gap: 0,
         top: `${obstacle.y}%`,
         transform: 'translate3d(0, -50%, 0)',
         height: '110px',
-        left: 0,
         zIndex: zIndex 
       }}
     >
@@ -302,6 +302,7 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
            style={{ 
                display: 'grid',
                gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`,
+               gap: 0,
                top: '100%', 
                height: `${obstacle.transitionZoneHeight}%`
            }}
