@@ -1,4 +1,3 @@
-
 import React, { useMemo, forwardRef } from 'react';
 import { ObstacleRow, ColorType, ObstacleType, PowerUpType, ObstacleItem } from '../types';
 import { BG_COLOR_CLASS_MAP } from '../constants';
@@ -237,7 +236,7 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
     visualFX = true, 
     isWarpGhost = false, 
     showWarpGuidance = false,
-    shouldHighlightGuided = true, 
+    shouldHighlightGuided = true,
     zIndex = 10 
 }, ref) => {
   if (!obstacle.active) {
