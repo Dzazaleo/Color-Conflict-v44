@@ -394,7 +394,7 @@ const Game: React.FC<GameProps> = ({
       setHudAliasWord('');
       aliasSpinRuleRef.current = null;
       if (floatingTextContainerRef.current) floatingTextContainerRef.current.innerHTML = '';
-  }, [startLaneExpansionSequence, settings.haptics, practiceConfig]);
+  }, [startLaneExpansionSequence, settings.haptics, practiceConfig, activeLaneCount]);
   
   const getPointsForEffect = (eff: PowerUpType) => {
       return CRATE_METADATA[eff]?.score || 1;
