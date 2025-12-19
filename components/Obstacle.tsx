@@ -266,13 +266,14 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
   return (
     <div
       ref={ref}
-      className="absolute w-full grid items-center px-0 pointer-events-none will-change-transform"
+      className="absolute w-full px-0 pointer-events-none will-change-transform"
       style={{ 
         top: `${obstacle.y}%`,
         transform: 'translate3d(0, -50%, 0)',
         height: '110px',
         left: 0,
         zIndex: zIndex,
+        display: 'grid',
         gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`
       }}
     >
@@ -298,10 +299,11 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
       
       {(obstacle.transitionZoneHeight || 0) > 0 && (
          <div 
-           className="absolute left-0 right-0 -z-20 grid pointer-events-none"
+           className="absolute left-0 right-0 -z-20 pointer-events-none"
            style={{ 
                top: '100%', 
                height: `${obstacle.transitionZoneHeight}%`,
+               display: 'grid',
                gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`
            }}
          >
