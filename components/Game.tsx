@@ -511,7 +511,8 @@ const Game: React.FC<GameProps> = ({
             let nextDist = Math.random() * (MAX_OBSTACLE_DISTANCE - MIN_OBSTACLE_DISTANCE) + MIN_OBSTACLE_DISTANCE;
             let transitionHeight = 0;
             
-            // DEFINITIVE FIX: Use the component state directly to ensure logic matches visuals.
+            // DEFINITIVE FIX: Use the component state directly.
+            // This prevents the loop from "thinking" there are 4 lanes when the UI only shows 3.
             const activeLanes = activeLaneCount;
             
             const setSize = OBSTACLES_PER_SET;
