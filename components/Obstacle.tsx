@@ -268,13 +268,13 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
       ref={ref}
       className="absolute w-full px-0 pointer-events-none will-change-transform"
       style={{ 
+        display: 'grid',
+        gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`,
         top: `${obstacle.y}%`,
         transform: 'translate3d(0, -50%, 0)',
         height: '110px',
         left: 0,
-        zIndex: zIndex,
-        display: 'grid',
-        gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`
+        zIndex: zIndex 
       }}
     >
         <style>{`
@@ -301,20 +301,22 @@ const ObstacleComponent = forwardRef<HTMLDivElement, ObstacleProps>(({
          <div 
            className="absolute left-0 right-0 -z-20 pointer-events-none"
            style={{ 
-               top: '100%', 
-               height: `${obstacle.transitionZoneHeight}%`,
                display: 'grid',
-               gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`
+               gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`,
+               top: '100%', 
+               height: `${obstacle.transitionZoneHeight}%`
            }}
          >
+            {/* Direct children of grid container, filling cells */}
             {Array.from({ length: itemCount }).map((_, i) => (
-                 <div key={i} className="w-full h-full" />
+                 <div key={i} className="relative w-full h-full" />
             ))}
          </div>
       )}
 
       {obstacle.items.map((item, index) => {
-        if (item.isEmpty) { 
+        if (item.isEmpty) {
+             // Empty slot: rigid grid cell
              return <div key={index} className="relative w-full h-full" />;
         }
 
